@@ -1,5 +1,5 @@
 import '../../style.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PostForm from '../../components/PostForm';
 import PostItem from '../../components/PostItem';
@@ -37,9 +37,15 @@ const Home: React.FC = () => {
     //   liked: false,
     // },
   ]);
-  
-  
 
+  useEffect(() => {
+    axios.get('http://localhost:8080/api/posts')
+    .then(res => {
+      setPosts(res.data);
+    });
+  })
+  
+  
   const [inputValues, setInputValues] = useState<InputValues>({
     id: null,
     name: '',
@@ -61,12 +67,13 @@ const Home: React.FC = () => {
     axios.post('http://localhost:8080/api/posts/store', {
       user: inputValues.name,
       content: inputValues.content,
-    }).then(response => {
-      console.log(response);
-      setPosts(response.data);
+    }).then(res => {
+      console.log(res);
+      setPosts(res.data);
     })
   }
 
+// API不使用時の投稿
   // const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
   //   const nextId = posts.length > 0
@@ -96,20 +103,44 @@ const Home: React.FC = () => {
 
   const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const updatePosts = posts.map((post) => {
-      if (post.id === inputValues.id) {
-        post.name = inputValues.name;
-        post.content = inputValues.content;
-      }
-      return post;
-    });
-    setPosts(updatePosts);
-    setInputValues({
-      id: null,
-      name: '',
-      content: '',
+    axios.patch(`http://localhost:8080/api/posts/update/${inputValues.id}`, {
+      user: inputValues.name,
+      content: inputValues.content,
+    }).then(res => {
+      const updatePosts = posts.map((post) => {
+        if (post.id === res.data.id) {
+          post.name = res.data.user;
+          post.content = res.data.content;
+        }
+        return post;
+      });
+      setPosts(updatePosts);
+      setInputValues({
+        id: null,
+        name: '',
+        content: '',
+      });
+  
     });
   };
+
+  // API不使用時の編集機能
+  // const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   const updatePosts = posts.map((post) => {
+  //     if (post.id === inputValues.id) {
+  //       post.name = inputValues.name;
+  //       post.content = inputValues.content;
+  //     }
+  //     return post;
+  //   });
+  //   setPosts(updatePosts);
+  //   setInputValues({
+  //     id: null,
+  //     name: '',
+  //     content: '',
+  //   });
+  // };
 
   const handleClickLikeButton = (id: number) => {
     const updatePosts = posts.map((post) => {
@@ -121,10 +152,20 @@ const Home: React.FC = () => {
     setPosts(updatePosts);
   };
 
+
   const handleDelete = (id: number) => {
-    const updatePosts = posts.filter((post) => {return post.id !== id});
-    setPosts(updatePosts);
+    axios.patch(`http://localhost:8080/api/posts/${id}`)
+    .then(res => {
+      const updatePosts = posts.filter((post) => {return post.id !== res.data.id});
+      setPosts(updatePosts);
+    });
   };
+
+// API不使用時のDELETE
+//   const handleDelete = (id: number) => {
+//     const updatePosts = posts.filter((post) => {return post.id !== id});
+//     setPosts(updatePosts);
+//   };
 
   const handleClickEditButton = (post: Post) => {
     setInputValues({
